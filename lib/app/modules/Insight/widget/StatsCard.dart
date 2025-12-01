@@ -49,7 +49,7 @@ class StatCard extends StatelessWidget {
                   style: TextStyle(
                     color: valueColor,
                     fontSize: 17.5,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     fontFamily: 'Poppins',
                   ),
                 ),

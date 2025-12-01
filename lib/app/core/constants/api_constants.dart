@@ -12,6 +12,9 @@ class ApiConstants {
   static const String userProfile = '/user/profile';
   static const String updateProfile = '/user/update';
   
+  // Profile details endpoint
+  static const String profileDetails = '/auth/profile';
+  
   // Transaction endpoints
   static const String transactions = '/transactions';
   static const String addTransaction = '/transactions/add';
@@ -25,6 +28,12 @@ class ApiConstants {
   // Analytics endpoints
   static const String analytics = '/analytics';
   static const String reports = '/reports';
+  static const String cashflowStatus = '/analytics/cashflow-status';
+  static const String financialSummary = '/analytics/financial-summary';
+  static const String insights = '/analytics/insights';
+  
+  // Chatbot endpoints
+  static const String chatbotChat = '/chatbot/chat';
   
   // Headers
   static Map<String, String> get headers => {

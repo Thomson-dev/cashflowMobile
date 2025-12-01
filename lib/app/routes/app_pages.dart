@@ -1,6 +1,9 @@
 import 'package:cashflow/app/modules/auth/login/login_screen.dart';
 import 'package:cashflow/app/modules/auth/register/register_view.dart';
+import 'package:cashflow/app/modules/auth/userController.dart';
 import 'package:cashflow/app/modules/main/main_layout.dart';
+import 'package:cashflow/app/modules/chatbot/chatbot_view.dart';
+import 'package:cashflow/app/modules/settings/settings_view.dart';
 import 'package:get/get.dart';
 import '../modules/home/home_view.dart';
 
@@ -27,11 +30,25 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.home,
-      page: () => const HomeScreen(),
+      page: () {
+        Get.put(ProfileController());
+        return HomeScreen();
+      },
     ),
     GetPage(
       name: AppRoutes.main,
-      page: () => MainLayout(),
+      page: () {
+        Get.put(ProfileController());
+        return MainLayout();
+      },
+    ),
+    GetPage(
+      name: AppRoutes.chatbot,
+      page: () => ChatbotView(),
+    ),
+    GetPage(
+      name: AppRoutes.settings,
+      page: () => SettingsView(),
     ),
     // Add more GetPages here as you create more screens
     // GetPage(

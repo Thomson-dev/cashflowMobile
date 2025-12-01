@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:cashflow/app/data/models/user_model.dart';
 import 'package:cashflow/app/data/services/auth_service.dart';
 import 'package:cashflow/app/data/services/storage_service.dart';
@@ -303,24 +304,20 @@ class RegisterController extends GetxController {
       await _clearDraft();
       
       // Show success message
-      Get.snackbar(
-        'Success',
-        response['message'] ?? 'Registration successful!',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
+      _showAwesomeSnackbar(
+        title: 'Success!',
+        message: response['message'] ?? 'Registration successful!',
+        contentType: ContentType.success,
       );
 
       // Navigate to home
-      Get.offAllNamed('/home');
+      Get.offAllNamed('/main');
 
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString().replaceAll('Exception: ', ''),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
+      _showAwesomeSnackbar(
+        title: 'Error!',
+        message: e.toString().replaceAll('Exception: ', ''),
+        contentType: ContentType.failure,
       );
     } finally {
       isLoading.value = false;
@@ -331,5 +328,33 @@ class RegisterController extends GetxController {
   void skipBusinessInfo() {
     currentStep.value = 2;
     _saveDraft(); // Save progress
+  }
+
+  // Show awesome snackbar
+  void _showAwesomeSnackbar({
+    required String title,
+    required String message,
+    required ContentType contentType,
+  }) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final snackBar = SnackBar(
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        margin: const EdgeInsets.only(
+          top: 10,
+          left: 10,
+          right: 10,
+        ),
+        content: AwesomeSnackbarContent(
+          title: title,
+          message: message,
+          contentType: contentType,
+        ),
+      );
+      ScaffoldMessenger.of(Get.context!)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(snackBar);
+    });
   }
 }

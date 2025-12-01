@@ -1,9 +1,26 @@
+import 'package:cashflow/app/modules/home/widget/header.dart';
+import 'package:cashflow/app/modules/home/widget/healthScore.dart';
+import 'package:cashflow/app/modules/auth/userController.dart';
+import 'package:cashflow/app/modules/home/widget/recentTrancation.dart';
+import 'package:cashflow/app/modules/transactions/controller/transaction_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 // Enhanced Dashboard with best UX practices
+
+String _formatCurrency(double amount) {
+  return amount
+      .toStringAsFixed(0)
+      .replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]},',
+      );
+}
+
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  HomeScreen({Key? key}) : super(key: key);
+  final ProfileController profileController = Get.find<ProfileController>();
+    final TransactionController transcontroller = Get.put(TransactionController());
 
   @override
   Widget build(BuildContext context) {
@@ -11,9 +28,18 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF9FAFB),
       body: SafeArea(
         child: RefreshIndicator(
+          color: const Color(0xFF10B981), // Custom spinner color (green)
+          backgroundColor: Colors.white, // Spinner background
+          displacement: 40, // Distance from top
+          strokeWidth: 3, // Thickness of spinner
           onRefresh: () async {
-            // Pull to refresh logic
-            await Future.delayed(const Duration(seconds: 1));
+            await Future.wait([
+              profileController.fetchUserProfile(),
+              profileController.fetchCashflowStatus(),
+              profileController.fetchFinancialSummary(),
+              transcontroller.fetchTransactions(),
+             
+            ]);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -23,7 +49,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header (replaces SliverAppBar)
-                  _HomeHeader(
+                  HomeHeader(
                     getGreeting: _getGreeting,
                     onSearch: () => Get.toNamed('/search'),
                     onNotifications: () => Get.toNamed('/notifications'),
@@ -31,44 +57,49 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // Featured Balance Card (Hero)
-                  _FeaturedBalanceCard(
-                    currentBalance: 10000,
+                  Obx(
+                    () => _FeaturedBalanceCard(
+                      currentBalance: profileController.currentBalance.value,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Income & Expense Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _CompactMetricCard(
-                          title: ' Monthly Income',
-                          value: ' ₦0',
+                  // Display monthly income and expenses
+                  Obx(
+                    () => Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _CompactMetricCard(
+                          title: 'Monthly Income',
+                          value:
+                              '₦${_formatCurrency(profileController.monthlyIncome.value)}',
                           change: '+8.2%',
                           isPositive: true,
                           color: const Color(0xFF10B981),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _CompactMetricCard(
+                        _CompactMetricCard(
                           title: 'Monthly Expenses',
-                          value: ' ₦0',
+                          value:
+                              '₦${_formatCurrency(profileController.monthlyExpenses.value)}',
                           change: '+15.1%',
                           isPositive: false,
                           color: const Color(0xFFEF4444),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Health Score Banner
-                  _HealthScoreBanner(
-                    currentBalance: 10000,
-                    dailyBurnRate: 0,
-                    daysRemaining: 999,
-                    indicator: 'green',
-                    phrase: "You're doing great! You have 999 days of runway.",
+                  // In your widget, wrap with Obx
+                  Obx(
+                    () => HealthScoreBanner(
+                      dailyBurnRate: profileController.dailyBurnRate.value,
+                      daysRemaining: profileController.daysRemaining.value,
+                      indicator: profileController.indicator.value,
+                      phrase: profileController.phrase.value,
+                    ),
                   ),
                   const SizedBox(height: 28),
 
@@ -89,7 +120,8 @@ class HomeScreen extends StatelessWidget {
                     onActionTap: () => Get.toNamed('/transactions'),
                   ),
                   const SizedBox(height: 16),
-                  _RecentTransactionsList(),
+
+                  RecentTransactionsList(),
                 ],
               ),
             ),
@@ -105,76 +137,22 @@ class HomeScreen extends StatelessWidget {
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
   }
-
-  void _showAddTransactionSheet() {
-    Get.bottomSheet(
-      const AddTransactionSheet(),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-    );
-  }
-}
-
-// Header widget to replace SliverAppBar
-class _HomeHeader extends StatelessWidget {
-  final String Function() getGreeting;
-  final VoidCallback onSearch;
-  final VoidCallback onNotifications;
-
-  const _HomeHeader({
-    required this.getGreeting,
-    required this.onSearch,
-    required this.onNotifications,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              getGreeting(),
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF6B7280),
-                fontFamily: 'Poppins',
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'John Doe',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF374151), // lighter black
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            _HeaderIconButton(icon: Icons.search, onTap: onSearch),
-            const SizedBox(width: 8),
-            _NotificationBadge(count: 3, onTap: onNotifications),
-          ],
-        ),
-      ],
-    );
-  }
 }
 
 // Featured Balance Card (Hero Card)
 class _FeaturedBalanceCard extends StatelessWidget {
   final double currentBalance;
 
-  const _FeaturedBalanceCard({
-    required this.currentBalance,
-  });
+  const _FeaturedBalanceCard({required this.currentBalance});
+
+  String _formatCurrency(double amount) {
+    return amount
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -238,7 +216,7 @@ class _FeaturedBalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '₦${currentBalance.toStringAsFixed(0)}',
+            '₦${_formatCurrency(currentBalance)}',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 26,
@@ -391,190 +369,6 @@ class _CompactMetricCard extends StatelessWidget {
   }
 }
 
-// Health Score Banner
-class _HealthScoreBanner extends StatelessWidget {
-  final double currentBalance;
-  final double dailyBurnRate;
-  final int daysRemaining;
-  final String indicator;
-  final String phrase;
-
-  const _HealthScoreBanner({
-    required this.currentBalance,
-    required this.dailyBurnRate,
-    required this.daysRemaining,
-    required this.indicator,
-    required this.phrase,
-  });
-
-  Color getColor() {
-    switch (indicator.toLowerCase()) {
-      case 'green':
-        return const Color(0xFF10B981);
-      case 'yellow':
-        return const Color(0xFFF59E0B);
-      case 'red':
-        return const Color(0xFFEF4444);
-      default:
-        return const Color(0xFF6B7280);
-    }
-  }
-
-  IconData getIcon() {
-    switch (indicator.toLowerCase()) {
-      case 'green':
-        return Icons.check_circle;
-      case 'yellow':
-        return Icons.warning;
-      case 'red':
-        return Icons.error;
-      default:
-        return Icons.info;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: getColor().withOpacity(0.3), width: 2),
-       
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: getColor().withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  getIcon(),
-                  color: getColor(),
-                  size: 30,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Financial Health',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF6B7280),
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      phrase,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF374151),
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Divider(color: Colors.grey[200], height: 1),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _HealthMetric(
-                label: 'Balance',
-                value: '₦${currentBalance.toStringAsFixed(0)}',
-                icon: Icons.account_balance_wallet,
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: Colors.grey[200],
-              ),
-              _HealthMetric(
-                label: 'Daily Burn',
-                value: dailyBurnRate > 0 
-                    ? '₦${dailyBurnRate.toStringAsFixed(0)}'
-                    : '₦0',
-                icon: Icons.local_fire_department,
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: Colors.grey[200],
-              ),
-              _HealthMetric(
-                label: 'Runway',
-                value: daysRemaining >= 999 
-                    ? '999+ days' 
-                    : '$daysRemaining days',
-                icon: Icons.trending_up,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HealthMetric extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  const _HealthMetric({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, size: 18, color: const Color(0xFF6B7280)),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF6B7280),
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF374151),
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // Quick Actions Grid
 class _QuickActionsGrid extends StatelessWidget {
   @override
@@ -673,133 +467,9 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
-// Recent Transactions List
-class _RecentTransactionsList extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _TransactionItem(
-          title: 'Sales Revenue',
-          category: 'Income',
-          amount: 45000,
-          isIncome: true,
-          date: 'Today, 2:30 PM',
-          icon: Icons.trending_up,
-        ),
-        _TransactionItem(
-          title: 'Office Supplies',
-          category: 'Expenses',
-          amount: 12500,
-          isIncome: false,
-          date: 'Yesterday',
-          icon: Icons.shopping_bag,
-        ),
-        _TransactionItem(
-          title: 'Client Payment',
-          category: 'Income',
-          amount: 85000,
-          isIncome: true,
-          date: 'Oct 13',
-          icon: Icons.account_balance_wallet,
-        ),
-      ],
-    );
-  }
-}
 
-class _TransactionItem extends StatelessWidget {
-  final String title;
-  final String category;
-  final double amount;
-  final bool isIncome;
-  final String date;
-  final IconData icon;
 
-  const _TransactionItem({
-    required this.title,
-    required this.category,
-    required this.amount,
-    required this.isIncome,
-    required this.date,
-    required this.icon,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color:
-                  isIncome ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color:
-                  isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF374151), // lighter black
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$category • $date',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '${isIncome ? '+' : '-'}₦${amount.toStringAsFixed(0)}',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color:
-                  isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // Helper Widgets
 class _SectionHeader extends StatelessWidget {
@@ -840,99 +510,6 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _HeaderIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HeaderIconButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(icon, color: const Color(0xFF1F2937), size: 20),
-      ),
-    );
-  }
-}
-
-class _NotificationBadge extends StatelessWidget {
-  final int count;
-  final VoidCallback onTap;
-
-  const _NotificationBadge({required this.count, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            const Center(
-              child: Icon(
-                Icons.notifications_outlined,
-                color: Color(0xFF1F2937),
-                size: 20,
-              ),
-            ),
-            if (count > 0)
-              Positioned(
-                right: 6,
-                top: 6,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      count > 9 ? '9+' : '$count',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

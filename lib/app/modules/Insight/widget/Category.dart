@@ -57,7 +57,7 @@ class CategoryCard extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF111827),
               ),
@@ -125,7 +125,7 @@ class _CategoryRow extends StatelessWidget {
           child: Text(
             item.label,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: Color(0xFF111827),
             ),
@@ -138,7 +138,7 @@ class _CategoryRow extends StatelessWidget {
             Text(
               item.amount,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF111827),
               ),
@@ -146,7 +146,7 @@ class _CategoryRow extends StatelessWidget {
             Text(
               item.percentage,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF6B7280),
               ),

@@ -103,4 +103,141 @@ class AuthService {
       throw Exception('Failed to refresh token: $e');
     }
   }
+
+
+
+  // Fetch user profile details
+  Future<Map<String, dynamic>> getProfileDetails() async {
+    try {
+      final response = await _apiService.get(
+        ApiConstants.profileDetails, 
+        requiresAuth: true,
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to fetch profile details: $e');
+    }
+  }
+
+  // Fetch cashflow status
+  Future<Map<String, dynamic>> getCashflowStatus() async {
+    try {
+      final response = await _apiService.get(
+        ApiConstants.cashflowStatus,
+        requiresAuth: true,
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to fetch cashflow status: $e');
+    }
+  }
+
+  // Fetch financial summary
+  Future<Map<String, dynamic>> getFinancialSummary() async {
+    try {
+      final response = await _apiService.get(
+        ApiConstants.financialSummary,
+        requiresAuth: true,
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to fetch financial summary: $e');
+    }
+  }
+
+  // Send message to chatbot
+  Future<Map<String, dynamic>> sendChatbotMessage(String message) async {
+    try {
+      print('Sending message to chatbot: $message');
+      final payload = {'userMessage': message};
+      print('Payload: $payload');
+      
+      final response = await _apiService.post(
+        ApiConstants.chatbotChat,
+        payload,
+        requiresAuth: true,
+      );
+
+      print('Chatbot response: $response');
+      return response;
+    } catch (e) {
+      print('Chatbot service error: $e');
+      throw Exception('Failed to send chatbot message: $e');
+    }
+  }
+
+  // Create transaction
+  Future<Map<String, dynamic>> createTransaction({
+    required String type,
+    required double amount,
+    required String description,
+    required String category,
+    required String date,
+    List<String>? tags,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        ApiConstants.transactions,
+        {
+          'type': type,
+          'amount': amount,
+          'description': description,
+          'category': category,
+          'date': date,
+          'tags': tags ?? [],
+        },
+        requiresAuth: true,
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to create transaction: $e');
+    }
+  }
+
+
+  // Get all transactions
+  Future<Map<String, dynamic>> getAllTransactions() async {
+    try {
+      final response = await _apiService.get(
+        ApiConstants.transactions,
+        requiresAuth: true,
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to fetch transactions: $e');
+    }
+  }
+
+  // Delete transaction
+  Future<Map<String, dynamic>> deleteTransaction(String transactionId) async {
+    try {
+      final response = await _apiService.delete(
+        '${ApiConstants.transactions}/$transactionId',
+        requiresAuth: true,
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to delete transaction: $e');
+    }
+  }
+
+  // Get analytics insights
+  Future<Map<String, dynamic>> getInsights() async {
+    try {
+      final response = await _apiService.get(
+        ApiConstants.insights,
+        requiresAuth: true,
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to fetch insights: $e');
+    }
+  }
 }

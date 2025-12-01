@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.cashflow"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "26.1.10909125" // Use a stable version
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

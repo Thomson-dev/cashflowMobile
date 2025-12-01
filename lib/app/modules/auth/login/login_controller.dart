@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cashflow/app/data/services/auth_service.dart';
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 
 class LoginController extends GetxController {
   // Services
@@ -57,6 +58,33 @@ class LoginController extends GetxController {
     return null;
   }
 
+  // Show awesome snackbar
+  void _showAwesomeSnackbar({
+    required String title,
+    required String message,
+    required ContentType contentType,
+  }) {
+    final snackBar = SnackBar(
+      elevation: 0,
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      margin: const EdgeInsets.only(
+        top: 10,
+        left: 10,
+        right: 10,
+      ),
+      content: AwesomeSnackbarContent(
+        title: title,
+        message: "Wrong password or email. Please try again.",
+        contentType: contentType,
+      ),
+    );
+
+    ScaffoldMessenger.of(Get.context!)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(snackBar);
+  }
+
   // Login
   Future<void> login() async {
     if (formKey.currentState?.validate() ?? false) {
@@ -68,25 +96,23 @@ class LoginController extends GetxController {
           passwordController.text,
         );
 
-        // Show success message
-        Get.snackbar(
-          'Success',
-          response['message'] ?? 'Login successful!',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
-
-        // Navigate to home
+        // Navigate to home first
         Get.offAllNamed('/main');
 
+        // Show success message after navigation
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _showAwesomeSnackbar(
+            title: 'Success!',
+            message: response['message'] ?? 'Login successful! Welcome back.',
+            contentType: ContentType.success,
+          );
+        });
+
       } catch (e) {
-        Get.snackbar(
-          'Error',
-          e.toString().replaceAll('Exception: ', ''),
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
+        _showAwesomeSnackbar(
+          title: 'Error!',
+          message: e.toString().replaceAll('Exception: ', ''),
+          contentType: ContentType.failure,
         );
       } finally {
         isLoading.value = false;
@@ -96,11 +122,10 @@ class LoginController extends GetxController {
 
   // Forgot password
   void forgotPassword() {
-    // TODO: Implement forgot password
-    Get.snackbar(
-      'Info',
-      'Forgot password functionality coming soon',
-      snackPosition: SnackPosition.BOTTOM,
+    _showAwesomeSnackbar(
+      title: 'Coming Soon!',
+      message: 'Forgot password functionality will be available soon.',
+      contentType: ContentType.help,
     );
   }
 

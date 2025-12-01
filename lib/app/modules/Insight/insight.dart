@@ -1,9 +1,10 @@
+import 'package:cashflow/app/modules/Insight/controller/insight_controller.dart';
 import 'package:cashflow/app/modules/Insight/widget/AIPoweredInsights.dart';
 import 'package:cashflow/app/modules/Insight/widget/Category.dart';
 import 'package:cashflow/app/modules/Insight/widget/PeriodSummaryCard.dart';
 import 'package:cashflow/app/modules/Insight/widget/StatsCard.dart';
 import 'package:cashflow/app/modules/Insight/widget/TrendCard.dart';
-
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 enum Period { d7, d30, d90, y1 }
@@ -16,8 +17,11 @@ class FinancialInsightsScreen extends StatefulWidget {
       _FinancialInsightsScreenState();
 }
 
-class _FinancialInsightsScreenState extends State<FinancialInsightsScreen> {
+class _FinancialInsightsScreenState extends State<FinancialInsightsScreen>
+    with TickerProviderStateMixin {
   Period _period = Period.d30;
+  late TabController _tabController;
+  final InsightController _insightController = Get.put(InsightController());
 
   String _label(Period p) {
     switch (p) {
@@ -64,7 +68,9 @@ class _FinancialInsightsScreenState extends State<FinancialInsightsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: RefreshIndicator(
+          onRefresh: _insightController.refreshInsights,
+          child: SingleChildScrollView(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
             child: Column(
@@ -209,41 +215,87 @@ class _FinancialInsightsScreenState extends State<FinancialInsightsScreen> {
                   ],
                 ),
                 SizedBox(height: 16),
-                AIPoweredInsights(
-                  insights: {
-                    'spendingTooHigh': {
-                      'isHigh': false,
-                      'currentMonthExpenses': 0,
-                      'averageExpenses': 0,
-                      'percentageIncrease': 0,
-                      'message': 'Your spending is within normal range.',
-                    },
-                    'inflowsLow': {
-                      'isLow': false,
-                      'currentMonthIncome': 0,
-                      'averageIncome': 0,
-                      'percentageDecrease': 0,
-                      'message': 'Your income is within normal range.',
-                    },
-                    'upcomingBills': [],
-                    'recommendations': [
-                      'You\'re on track! Keep maintaining your current spending habits.',
-                    ],
-                  },
-                  aiInsights: {
-                    'spendingInsight': 'Your spending is within normal range.',
-                    'incomeInsight': 'Your income is within normal range.',
-                    'billInsight': 'No upcoming bills or notable alerts.',
-                    'riskLevel': 'Low',
-                    'advice': 'You\'re on track! Keep maintaining your current spending habits.',
-                    'summary': 'The business is financially stable with normal spending and income patterns.',
-                  },
-                ),
-                // SizedBox(height: 16),
+                Obx(() {
+                  if (_insightController.isLoading.value) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF10B981),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (_insightController.errorMessage.value.isNotEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red[700]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _insightController.errorMessage.value,
+                              style: TextStyle(
+                                color: Colors.red[700],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (!_insightController.hasInsights) {
+                    return Container(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.insights_outlined,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No insights available',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Pull down to refresh',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return AIPoweredInsights(
+                    insights: _insightController.insights.value,
+                    aiInsights: _insightController.aiInsights.value,
+                  );
+                }),
+                SizedBox(height: 16),
               ],
             ),
           ),
         ),
+      ),
       ),
     );
   }

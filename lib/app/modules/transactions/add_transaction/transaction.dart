@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:cashflow/app/data/services/auth_service.dart';
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 
 enum TransactionType { income, expense }
 
@@ -13,8 +16,10 @@ class TransactionForm extends StatefulWidget {
 class TransactionFormState extends State<TransactionForm>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
 
   TransactionType _type = TransactionType.income;
+  bool _isSubmitting = false;
 
   final _amountCtrl = TextEditingController(text: '0.00');
   final _descCtrl = TextEditingController();
@@ -184,7 +189,7 @@ class TransactionFormState extends State<TransactionForm>
             FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
           ],
           style: TextStyle(
-            color: _text,
+            color: _labelLight,
             fontSize: 14.5,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -197,7 +202,7 @@ class TransactionFormState extends State<TransactionForm>
                 '₦',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: _primary,
+                  color: _labelLight, 
                   fontSize: 14.5,
                 ),
               ),
@@ -349,30 +354,21 @@ class TransactionFormState extends State<TransactionForm>
         ),
         onPressed: () {
           if (_formKey.currentState?.validate() != true) return;
-
-          // Show success feedback
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white, size: 20),
-                  const SizedBox(width: 12),
-                  const Text('Transaction added successfully'),
-                ],
-              ),
-              backgroundColor: _success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.all(16),
-            ),
-          );
+          _submitTransaction();
         },
-        child: Text(
-          'Add Transaction',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
+        child: _isSubmitting
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Text(
+                'Add Transaction',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
             fontSize: 14.5,
             letterSpacing: 0.5,
           ),
@@ -383,6 +379,78 @@ class TransactionFormState extends State<TransactionForm>
 
   String _formatDate(DateTime d) =>
       '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+
+  // Submit transaction to API
+  Future<void> _submitTransaction() async {
+    setState(() => _isSubmitting = true);
+
+    try {
+      final amount = double.parse(_amountCtrl.text.replaceAll(',', ''));
+      final dateStr = '${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}';
+
+      final response = await _authService.createTransaction(
+        type: _type == TransactionType.income ? 'income' : 'expense',
+        amount: amount,
+        description: _descCtrl.text.trim(),
+        category: _category ?? '',
+        date: dateStr,
+        tags: [],
+      );
+
+      // Show success snackbar
+      _showAwesomeSnackbar(
+        title: 'Success!',
+        message: 'Transaction added successfully',
+        contentType: ContentType.success,
+      );
+
+      // Clear form
+      _amountCtrl.text = '0.00';
+      _descCtrl.clear();
+      setState(() {
+        _category = null;
+        _date = DateTime.now();
+      });
+
+      // Navigate back or refresh
+      Get.back();
+    } catch (e) {
+      _showAwesomeSnackbar(
+        title: 'Error!',
+        message: e.toString().replaceAll('Exception: ', ''),
+        contentType: ContentType.failure,
+      );
+    } finally {
+      setState(() => _isSubmitting = false);
+    }
+  }
+
+  // Show awesome snackbar
+  void _showAwesomeSnackbar({
+    required String title,
+    required String message,
+    required ContentType contentType,
+  }) {
+    final snackBar = SnackBar(
+      elevation: 0,
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      margin: const EdgeInsets.only(
+        top: 10,
+        left: 10,
+        right: 10,
+      ),
+      content: AwesomeSnackbarContent(
+        title: title,
+        message: message,
+        contentType: contentType,
+      ),
+    );
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(snackBar);
+  }
 
   Widget _sectionLabel(String text) => Text(
     text,
@@ -422,7 +490,7 @@ class TransactionFormState extends State<TransactionForm>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: _primary, width: 2),
+        borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

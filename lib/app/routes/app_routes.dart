@@ -7,5 +7,7 @@ abstract class AppRoutes {
   static const transactions = '/transactions';
   static const analytics = '/analytics';
   static const profile = '/profile';
+  static const chatbot = '/chatbot';
+  static const settings = '/settings';
   // Add more routes as needed
 }

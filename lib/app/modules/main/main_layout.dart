@@ -1,5 +1,6 @@
 import 'package:cashflow/app/modules/Insight/insight.dart';
 import 'package:cashflow/app/modules/transactions/add_transaction/transaction.dart';
+import 'package:cashflow/app/modules/settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -20,7 +21,6 @@ class MainLayout extends StatelessWidget {
 
     // Fallback colors if TColors is not available
     final Color darkColor = const Color(0xFF18181B);
-    final Color accentColor = const Color(0xFF10B981);
 
     return Scaffold(
       body: Obx(() => _getScreen(controller.currentIndex.value)),
@@ -36,10 +36,11 @@ class MainLayout extends StatelessWidget {
               isDark
                   ? Colors.white.withOpacity(0.1)
                   : darkColor.withOpacity(0.1),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: const [
-            NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
+            NavigationDestination(icon: Icon(Iconsax.home, size: 18), label: 'Home'),
             NavigationDestination(
-              icon: Icon(Iconsax.home_1),
+              icon: Icon(Iconsax.home_1, size: 20),
               label: 'Transactions',
             ),
             // NavigationDestination(
@@ -47,51 +48,33 @@ class MainLayout extends StatelessWidget {
             //   label: 'SnapBook',
             // ),
             NavigationDestination(
-              icon: Icon(Iconsax.activity),
+              icon: Icon(Iconsax.activity, size: 20),
               label: 'Insights',
             ),
             NavigationDestination(
-              icon: Icon(Iconsax.setting),
+              icon: Icon(Iconsax.setting, size: 20),
               label: 'Settings',
             ),
           ],
         ),
       ),
       floatingActionButton: Obx(() {
-        // Hide on chatbot screen itself (if you want to hide for a specific tab, e.g. Profile)
-        if (controller.currentIndex.value == 4) return const SizedBox.shrink();
+        // Hide on settings screen
+        if (controller.currentIndex.value == 3) return const SizedBox.shrink();
         return Stack(
           clipBehavior: Clip.none,
           children: [
             FloatingActionButton(
-              onPressed: () => Get.to(() => const ChatbotScreen()),
+              onPressed: () => Get.toNamed('/chatbot'),
               backgroundColor: const Color(0xFF10B981),
               elevation: 4,
               child: const Icon(
                 Icons.chat_bubble_outline,
                 color: Colors.white,
-                size: 26,
+                size: 20,
               ),
             ),
-            Positioned(
-              right: -4,
-              top: -4,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEF4444),
-                  shape: BoxShape.circle,
-                ),
-                child: const Text(
-                  '2',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
+            
           ],
         );
       }),
@@ -102,14 +85,13 @@ class MainLayout extends StatelessWidget {
   Widget _getScreen(int index) {
     switch (index) {
       case 0:
-        return const HomeScreen();
+        return HomeScreen();
       case 1:
         return const TransactionForm();
-
       case 2:
         return const FinancialInsightsScreen();
       case 3:
-        return const SettingsScreen();
+        return SettingsView();
       default:
         return const DashboardScreen();
     }
@@ -120,14 +102,6 @@ class MainLayout extends StatelessWidget {
 
 class NavigationController extends GetxController {
   RxInt currentIndex = 0.obs;
-}
-
-// Minimal ChatbotScreen placeholder
-class ChatbotScreen extends StatelessWidget {
-  const ChatbotScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Chatbot Screen')));
 }
 
 // Placeholder screens
@@ -148,10 +122,4 @@ class SnapBookScreen extends StatelessWidget {
   const SnapBookScreen({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) => const Center(child: Text('Snap Book'));
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) => const Center(child: Text('Settings'));
 }
